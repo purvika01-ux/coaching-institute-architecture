@@ -54,23 +54,3 @@ Plus key decisions and a five-phase roadmap.
 - `enquiries` — name, phone, student_class, message, status, created_at
 
 Files go to a `update-files` bucket; the database stores only the URL. Batches, fees and faculty stay in `content/*.ts` — the owner doesn't edit them, which removes three tables and three admin screens.
-
-## Three decisions
-
-- **Enquiries are stored *and* emailed.** Email is the least reliable step, so the row is the source of truth and a delivery failure never fails the request.
-- **RLS enabled with no policies.** Blocks the anonymous key entirely; all access goes through the server with the service key.
-- **Everything in Mumbai.** Co-locating functions and database removes a cross-continent round trip.
-
-## Roadmap
-
-- [ ] 1 — Static site with fixed content
-- [ ] 2 — Enquiry form: validation, persistence, email
-- [ ] 3 — Login and text-only updates
-- [ ] 4 — Image and PDF attachments
-- [ ] 5 — Admin enquiry inbox with status
-
-Each phase is independently deployable.
-
-## Status
-
-Architecture complete. Implementation not started.
