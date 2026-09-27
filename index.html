@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arora Classes — Website Architecture</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#ffffff; --surface:#ffffff; --tint:#f9fafb;
+    --fg:#111827; --muted:#5b6472; --faint:#9ca3af;
+    --line:#4b5563; --bound:#9ca3af; --box:#ffffff; --box-br:#9ca3af;
+    --client:#2563eb; --client-bg:#eff6ff;
+    --app:#047857; --app-bg:#ecfdf5;
+    --data:#6d28d9; --data-bg:#f5f3ff;
+    --ext:#b45309; --ext-bg:#fffbeb;
+    --sec:#b91c1c; --sec-bg:#fef2f2;
+    --cover-bg:#0f172a; --cover-fg:#f1f5f9; --cover-accent:#60a5fa;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0f1115; --surface:#161a20; --tint:#12151b;
+      --fg:#e5e7eb; --muted:#a1a9b5; --faint:#6b7280;
+      --line:#9ca3af; --bound:#4b5563; --box:#161a20; --box-br:#4b5563;
+      --client:#60a5fa; --client-bg:#13203a;
+      --app:#34d399; --app-bg:#0e2a20;
+      --data:#a78bfa; --data-bg:#1d1933;
+      --ext:#fbbf24; --ext-bg:#2a2210;
+      --sec:#f87171; --sec-bg:#2c1414;
+      --cover-bg:#0b0d12; --cover-fg:#f1f5f9; --cover-accent:#60a5fa;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0f1115; --surface:#161a20; --tint:#12151b;
+    --fg:#e5e7eb; --muted:#a1a9b5; --faint:#6b7280;
+    --line:#9ca3af; --bound:#4b5563; --box:#161a20; --box-br:#4b5563;
+    --client:#60a5fa; --client-bg:#13203a;
+    --app:#34d399; --app-bg:#0e2a20;
+    --data:#a78bfa; --data-bg:#1d1933;
+    --ext:#fbbf24; --ext-bg:#2a2210;
+    --sec:#f87171; --sec-bg:#2c1414;
+    --cover-bg:#0b0d12; --cover-fg:#f1f5f9; --cover-accent:#60a5fa;
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth; scroll-padding-top:env(safe-area-inset-top,0px)}
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    line-height:1.6; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding:0 20px 80px}
+
+  /* cover */
+  .cover{background:var(--cover-bg); color:var(--cover-fg); padding:56px 20px 48px; margin-bottom:40px}
+  .cover-in{max-width:1180px; margin:0 auto}
+  .eyebrow{font-size:.78rem; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--cover-accent); font-weight:700; margin:0 0 10px}
+  .cover h1{font-size:2.1rem; line-height:1.2; margin:0 0 12px; font-weight:800}
+  .cover p{margin:0; color:#b6c2d1; font-size:1rem; max-width:760px}
+  .meta{margin-top:22px; display:flex; flex-wrap:wrap; gap:8px}
+  .chip{background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.16);
+    color:#dbe4ee; font-size:.78rem; padding:5px 11px; border-radius:99px}
+
+  h2{font-size:1.35rem; font-weight:700; margin:0 0 6px; scroll-margin-top:20px}
+  h3{font-size:1rem; font-weight:600; margin:28px 0 8px}
+  .lead{color:var(--muted); margin:0 0 20px; font-size:.95rem; max-width:860px}
+  section{padding-top:52px; border-top:1px solid var(--box-br); margin-top:52px}
+  section:first-of-type{border-top:none; margin-top:0}
+  .secnum{font-size:.75rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--faint); font-weight:700; display:block; margin-bottom:6px}
+
+  /* contents */
+  .toc{background:var(--tint); border:1px solid var(--box-br); border-radius:10px; padding:20px 22px; margin-bottom:12px}
+  .toc h2{font-size:1rem; margin-bottom:12px}
+  .toc ol{margin:0; padding-left:20px}
+  .toc li{margin-bottom:7px; font-size:.93rem}
+  .toc a{color:var(--fg); text-decoration:none; border-bottom:1px solid var(--box-br)}
+  .toc a:hover{border-color:var(--client)}
+  .toc span{color:var(--muted)}
+
+  /* figures */
+  .figure{overflow-x:auto; -webkit-overflow-scrolling:touch; background:var(--tint);
+    border:1px solid var(--box-br); border-radius:10px; padding:14px; margin:6px 0 10px}
+  .figure svg{display:block; width:100%; height:auto}
+  .cap{color:var(--faint); font-size:.82rem; margin:0 0 26px}
+
+  table{border-collapse:collapse; width:100%; font-size:.9rem; margin:6px 0 4px}
+  th,td{text-align:left; padding:8px 10px; border-bottom:1px solid var(--box-br); vertical-align:top}
+  th{font-weight:600; color:var(--muted); font-size:.76rem; text-transform:uppercase; letter-spacing:.05em}
+  code{font-family:"JetBrains Mono",ui-monospace,Menlo,monospace; font-size:.86em;
+    background:var(--tint); border:1px solid var(--box-br); border-radius:4px; padding:1px 5px}
+  .note{margin-top:20px; padding:14px 16px; background:var(--tint); border:1px solid var(--box-br);
+    border-radius:8px; font-size:.9rem; color:var(--muted)}
+  pre{background:var(--tint); border:1px solid var(--box-br); border-radius:8px;
+    padding:14px 16px; overflow-x:auto; font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;
+    font-size:.82rem; line-height:1.6; color:var(--fg); margin:8px 0 4px}
+  pre code{background:none; border:none; padding:0; font-size:inherit}
+  .note strong{color:var(--fg)}
+  ul.plain{padding-left:20px; margin:8px 0 0} ul.plain li{margin-bottom:8px; font-size:.93rem}
+  footer{margin-top:60px; padding-top:22px; border-top:1px solid var(--box-br);
+    color:var(--faint); font-size:.85rem}
+
+  /* shared SVG text classes */
+  .tier{font-family:Inter,sans-serif; font-size:11.5px; font-weight:700; letter-spacing:.07em}
+  .comp{font-family:Inter,sans-serif; font-size:13.5px; font-weight:700; fill:var(--fg)}
+  .det{font-family:Inter,sans-serif; font-size:11.5px; fill:var(--muted)}
+  .svc{font-family:Inter,sans-serif; font-size:12.5px; font-weight:600; fill:var(--fg)}
+  .conn{font-family:Inter,sans-serif; font-size:10.5px; fill:var(--muted); font-weight:500}
+  .mono{font-family:"JetBrains Mono",monospace; font-size:10.5px; fill:var(--muted)}
+  .flow{stroke:var(--line); stroke-width:1.5; fill:none}
+  .flowd{stroke:var(--faint); stroke-width:1.3; fill:none; stroke-dasharray:5 4}
+  .bnd{fill:none; stroke:var(--bound); stroke-width:1.3; stroke-dasharray:7 5}
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="cover-in">
+    <p class="eyebrow">System Architecture</p>
+    <h1>Arora Classes — Website Architecture</h1>
+    <p>Design document for the website of Arora Classes, a Class 9–12 coaching centre in
+       Kitchlu Nagar, Ludhiana. The site answers the questions parents currently ask by
+       phone, and lets the owner post updates without touching code.</p>
+    <div class="meta">
+      <span class="chip">Next.js 14</span>
+      <span class="chip">Tailwind CSS</span>
+      <span class="chip">Supabase</span>
+      <span class="chip">Resend</span>
+      <span class="chip">Vercel</span>
+      <span class="chip">₹0 / month</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">System Overview</a> <span>— three tiers, trust boundaries, every connector labelled</span></li>
+      <li><a href="#frontend">Frontend Layer</a> <span>— every page and the call it makes</span></li>
+      <li><a href="#backend">Backend Layer</a> <span>— the request pipeline and the four services</span></li>
+      <li><a href="#database">Database Layer</a> <span>— two tables, one bucket, and what stays in code</span></li>
+      <li><a href="#deployment">Deployment Layer</a> <span>— where each part physically runs</span></li>
+      <li><a href="#decisions">Key Decisions</a> <span>— what was chosen and why</span></li>
+      <li><a href="#roadmap">Roadmap</a> <span>— five phases, each independently deployable</span></li>
+    </ol>
+  </div>
+
+  <h3>The problem this solves</h3>
+  <p class="lead">
+    Arora Classes receives 10–15 enquiry calls a day. Most arrive during class hours and go
+    unanswered, and the ones that connect ask the same four things: batch timings, fees, seat
+    availability, and faculty. Parents who can't get through call the next centre. Published
+    information removes most of those calls; an enquiry form captures the rest.
+  </p>
+
+  <h3>How to read the diagrams</h3>
+  <ul class="plain">
+    <li><strong>Dashed rectangles</strong> are trust boundaries. Anything inside the client tier is public and can be read by any visitor; anything inside the application tier is private to the server.</li>
+    <li><strong>Solid arrows</strong> are requests or calls, labelled with the protocol and what travels over them.</li>
+    <li><strong>Dashed arrows</strong> are direct asset fetches that bypass the application.</li>
+    <li><strong>Monospaced labels</strong> such as <code>POST /api/enquiry</code> are the exact endpoint involved.</li>
+  </ul>
+
+  <!-- ===================== 1. SYSTEM OVERVIEW ===================== -->
+  <section id="overview">
+    <span class="secnum">Diagram 1</span>
+    <h2>System Overview</h2>
+    <p class="lead">
+      Three tiers. The client tier is untrusted; everything a visitor's phone downloads is public.
+      The application tier holds all logic and every secret. The data tier stores text, files and
+      sends email. No component skips a tier.
+    </p>
+    <div class="figure"><svg viewBox="0 0 1240 790" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="Three-tier architecture: client tier with parent and owner browsers; application tier on Vercel with middleware, pages, API services and a data access module; data tier with PostgreSQL, object storage, Resend and the owner's inbox.">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/>
+    </marker>
+    <marker id="ad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--faint)"/>
+    </marker>
+  </defs>
+  <style>
+    .tier{font-family:Inter,sans-serif;font-size:11.5px;font-weight:700;letter-spacing:.07em}
+    .comp{font-family:Inter,sans-serif;font-size:13.5px;font-weight:700;fill:var(--fg)}
+    .det{font-family:Inter,sans-serif;font-size:11.5px;fill:var(--muted)}
+    .svc{font-family:Inter,sans-serif;font-size:12.5px;font-weight:600;fill:var(--fg)}
+    .conn{font-family:Inter,sans-serif;font-size:10.5px;fill:var(--muted);font-weight:500}
+    .flow{stroke:var(--line);stroke-width:1.5;fill:none;marker-end:url(#a)}
+    .flowd{stroke:var(--faint);stroke-width:1.3;fill:none;stroke-dasharray:5 4;marker-end:url(#ad)}
+    .bnd{fill:none;stroke:var(--bound);stroke-width:1.3;stroke-dasharray:7 5}
+  </style>
+
+  <!-- direct asset fetch, top lane -->
+  <path class="flowd" d="M1194 300 L 1204 300 L 1204 46 L 137 46 L 137 112"/>
+  <text x="330" y="40" class="conn">public file URL — image / PDF served direct from CDN, bypassing the application</text>
+
+  <!-- tier titles -->
+  <text x="24" y="70" class="tier" fill="var(--client)">CLIENT TIER · untrusted</text>
+  <text x="360" y="70" class="tier" fill="var(--app)">APPLICATION TIER · Vercel serverless, Mumbai · trusted</text>
+  <text x="940" y="70" class="tier" fill="var(--data)">DATA TIER + EXTERNAL SERVICES</text>
+
+  <!-- boundaries -->
+  <rect class="bnd" x="24" y="80" width="226" height="680" rx="10"/>
+  <rect class="bnd" x="360" y="80" width="530" height="680" rx="10"/>
+  <rect class="bnd" x="940" y="80" width="276" height="680" rx="10"/>
+
+  <!-- ===== CLIENT ===== -->
+  <rect x="44" y="112" width="186" height="100" rx="8" fill="var(--client-bg)" stroke="var(--client)" stroke-width="1.7"/>
+  <text x="62" y="138" class="comp">Parent / Student</text>
+  <text x="62" y="159" class="det">mobile browser</text>
+  <text x="62" y="178" class="det">reads information</text>
+  <text x="62" y="197" class="det">submits enquiry</text>
+
+  <rect x="44" y="252" width="186" height="100" rx="8" fill="var(--client-bg)" stroke="var(--client)" stroke-width="1.7"/>
+  <text x="62" y="278" class="comp">Owner</text>
+  <text x="62" y="299" class="det">mobile browser</text>
+  <text x="62" y="318" class="det">posts updates</text>
+  <text x="62" y="337" class="det">reads enquiries</text>
+
+  <!-- legend -->
+  <text x="44" y="446" class="tier" fill="var(--muted)">LEGEND</text>
+  <path d="M46 468 L 92 468" stroke="var(--line)" stroke-width="1.5" marker-end="url(#a)"/>
+  <text x="102" y="472" class="conn">request / call</text>
+  <path d="M46 496 L 92 496" stroke="var(--faint)" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#ad)"/>
+  <text x="102" y="500" class="conn">direct asset fetch</text>
+  <rect class="bnd" x="46" y="516" width="46" height="16" rx="4"/>
+  <text x="102" y="528" class="conn">trust boundary</text>
+
+  <text x="44" y="576" class="conn">Secrets — service key, session</text>
+  <text x="44" y="594" class="conn">secret, Resend key — exist only</text>
+  <text x="44" y="612" class="conn">inside the application tier, as</text>
+  <text x="44" y="630" class="conn">environment variables.</text>
+
+  <!-- ===== APPLICATION ===== -->
+  <rect x="382" y="112" width="496" height="58" rx="7" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.7"/>
+  <text x="400" y="136" class="comp">Edge middleware — access control</text>
+  <text x="400" y="156" class="det">verifies the signed session cookie on every /admin/* request</text>
+
+  <rect x="382" y="222" width="236" height="100" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.4"/>
+  <text x="398" y="246" class="svc">Public pages</text>
+  <text x="398" y="267" class="det">Home · Courses · Fees</text>
+  <text x="398" y="286" class="det">Faculty · Updates · Contact</text>
+  <text x="398" y="308" class="det">static + 60s revalidate</text>
+
+  <rect x="642" y="222" width="236" height="100" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.4"/>
+  <text x="658" y="246" class="svc">Admin pages</text>
+  <text x="658" y="267" class="det">Login · Post update</text>
+  <text x="658" y="286" class="det">Edit / delete · Inbox</text>
+  <text x="658" y="308" class="det">dynamic, never cached</text>
+
+  <rect x="382" y="382" width="496" height="206" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.5"/>
+  <text x="400" y="406" class="svc">API + business logic — Next.js route handlers</text>
+
+  <rect x="396" y="418" width="232" height="76" rx="6" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.3"/>
+  <text x="412" y="440" class="svc">Update service</text>
+  <text x="412" y="459" class="det">/api/updates</text>
+  <text x="412" y="478" class="det">POST · PATCH · DELETE</text>
+
+  <rect x="644" y="418" width="220" height="76" rx="6" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.3"/>
+  <text x="660" y="440" class="svc">Enquiry service</text>
+  <text x="660" y="459" class="det">/api/enquiry</text>
+  <text x="660" y="478" class="det">validate · rate limit</text>
+
+  <rect x="396" y="502" width="232" height="70" rx="6" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.3"/>
+  <text x="412" y="524" class="svc">Upload service</text>
+  <text x="412" y="543" class="det">/api/upload</text>
+  <text x="412" y="562" class="det">max 5 MB · jpg png pdf</text>
+
+  <rect x="644" y="502" width="220" height="70" rx="6" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.3"/>
+  <text x="660" y="524" class="svc">Auth service</text>
+  <text x="660" y="543" class="det">/api/auth/login</text>
+  <text x="660" y="562" class="det">issues session cookie</text>
+
+  <rect x="382" y="616" width="380" height="64" rx="7" fill="var(--box)" stroke="var(--data)" stroke-width="1.7"/>
+  <text x="398" y="638" class="comp">Data access module</text>
+  <text x="398" y="657" class="det">Supabase client · holds the service key</text>
+  <text x="398" y="674" class="det">only component allowed to reach the data tier</text>
+
+  <rect x="382" y="704" width="496" height="34" rx="6" fill="var(--tint)" stroke="var(--box-br)"
+        stroke-width="1.1" stroke-dasharray="4 3"/>
+  <text x="398" y="726" class="det">content/*.ts — batches, fees, faculty · changed by redeploy, not by admin</text>
+
+  <!-- ===== DATA ===== -->
+  <rect x="962" y="112" width="232" height="120" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.7"/>
+  <text x="980" y="136" class="comp">PostgreSQL</text>
+  <text x="980" y="157" class="det">Supabase managed</text>
+  <text x="980" y="178" class="det">· updates</text>
+  <text x="980" y="196" class="det">· enquiries</text>
+  <text x="980" y="217" class="det">RLS on, no policies</text>
+
+  <rect x="962" y="272" width="232" height="104" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.7"/>
+  <text x="980" y="296" class="comp">Object storage</text>
+  <text x="980" y="317" class="det">bucket: update-files</text>
+  <text x="980" y="338" class="det">· notice images</text>
+  <text x="980" y="357" class="det">· PDF attachments</text>
+
+  <rect x="962" y="408" width="232" height="96" rx="8" fill="var(--ext-bg)" stroke="var(--ext)" stroke-width="1.7"/>
+  <text x="980" y="432" class="comp">Resend</text>
+  <text x="980" y="453" class="det">transactional email</text>
+  <text x="980" y="474" class="det">one message per enquiry</text>
+
+  <rect x="962" y="560" width="232" height="64" rx="8" fill="var(--ext-bg)" stroke="var(--ext)" stroke-width="1.7"/>
+  <text x="980" y="586" class="comp">Owner's inbox</text>
+  <text x="980" y="606" class="det">Gmail</text>
+
+  <!-- ===== CONNECTORS ===== -->
+
+  <path class="flow" d="M230 150 L 306 150 L 306 132 L 382 132"/>
+  <text x="264" y="144" class="conn">HTTPS</text>
+
+  <path class="flow" d="M230 300 L 344 300 L 344 152 L 382 152"/>
+  <text x="264" y="278" class="conn">HTTPS +</text>
+  <text x="264" y="292" class="conn">session cookie</text>
+
+  <path class="flow" d="M500 170 L 500 222"/>
+  <text x="508" y="200" class="conn">pass through</text>
+
+  <path class="flow" d="M760 170 L 760 222"/>
+  <text x="768" y="200" class="conn">only if cookie valid</text>
+
+  <path class="flow" d="M500 322 L 500 382"/>
+  <text x="508" y="356" class="conn">POST /api/enquiry</text>
+
+  <path class="flow" d="M760 322 L 760 382"/>
+  <text x="768" y="356" class="conn">POST /api/updates</text>
+
+  <path class="flow" d="M500 588 L 500 616"/>
+  <text x="508" y="606" class="conn">service calls</text>
+
+  <path class="flow" d="M762 634 L 888 634 L 888 172 L 962 172"/>
+  <text x="772" y="628" class="conn">SQL over TLS</text>
+
+  <path class="flow" d="M762 662 L 912 662 L 912 324 L 962 324"/>
+  <text x="772" y="678" class="conn">HTTPS upload</text>
+
+  <path class="flow" d="M864 456 L 962 456"/>
+  <text x="898" y="449" class="conn">HTTPS</text>
+
+  <path class="flow" d="M1078 504 L 1078 560"/>
+  <text x="1086" y="538" class="conn">SMTP</text>
+</svg></div>
+    <p class="cap">Figure 1 — Component and deployment view with trust boundaries.</p>
+
+    <h3>Connectors</h3>
+    <table>
+      <tr><th>From</th><th>To</th><th>Protocol</th><th>Carries</th></tr>
+      <tr><td>Parent browser</td><td>Edge middleware</td><td>HTTPS</td><td>Page requests, form submission</td></tr>
+      <tr><td>Owner browser</td><td>Edge middleware</td><td>HTTPS + cookie</td><td>Admin requests with session</td></tr>
+      <tr><td>Public pages</td><td>Enquiry service</td><td>HTTPS <code>fetch</code></td><td>name, phone, class, message</td></tr>
+      <tr><td>Admin pages</td><td>Update / Upload service</td><td>HTTPS <code>fetch</code></td><td>Update text; multipart file</td></tr>
+      <tr><td>Services</td><td>Data access module</td><td>in-process</td><td>Typed function calls</td></tr>
+      <tr><td>Data access module</td><td>PostgreSQL</td><td>Postgres wire over TLS</td><td>Parameterised SQL</td></tr>
+      <tr><td>Data access module</td><td>Object storage</td><td>HTTPS</td><td>Renamed file; returns public URL</td></tr>
+      <tr><td>Enquiry service</td><td>Resend</td><td>HTTPS REST</td><td>Email payload</td></tr>
+      <tr><td>Resend</td><td>Owner's inbox</td><td>SMTP</td><td>Enquiry notification</td></tr>
+      <tr><td>Object storage</td><td>Parent browser</td><td>HTTPS via CDN</td><td>Image / PDF, direct</td></tr>
+    </table>
+  </section>
+
+  <!-- ===================== 2. FRONTEND ===================== -->
+  <section id="frontend">
+    <span class="secnum">Diagram 2</span>
+    <h2>Frontend Layer</h2>
+    <p class="lead">
+      Ten routes in total. Six are public and statically generated, so they load from the CDN edge
+      with no server work. Four are admin routes, rendered dynamically and never cached. Only two
+      pages in the whole application send data anywhere.
+    </p>
+
+    <div class="figure">
+    <svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Frontend layer: six public routes and four admin routes, with the API call each makes.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/>
+        </marker>
+      </defs>
+
+      <text x="30" y="26" class="tier" fill="var(--client)">PUBLIC ROUTES · static, cached at the edge</text>
+      <rect class="bnd" x="30" y="38" width="450" height="474" rx="10"/>
+
+      <rect x="46" y="56" width="418" height="66" rx="7" fill="var(--client-bg)" stroke="var(--client)" stroke-width="1.5"/>
+      <text x="62" y="80" class="svc">/  ·  Home</text>
+      <text x="62" y="100" class="det">centre intro, key details, enquire button</text>
+      <text x="448" y="112" class="mono" text-anchor="end">no call</text>
+
+      <rect x="46" y="132" width="418" height="66" rx="7" fill="var(--client-bg)" stroke="var(--client)" stroke-width="1.5"/>
+      <text x="62" y="156" class="svc">/courses  ·  Batches</text>
+      <text x="62" y="176" class="det">class, subject, timing, days, seats status</text>
+      <text x="448" y="188" class="mono" text-anchor="end">from code</text>
+
+      <rect x="46" y="208" width="418" height="66" rx="7" fill="var(--client-bg)" stroke="var(--client)" stroke-width="1.5"/>
+      <text x="62" y="232" class="svc">/fees</text>
+      <text x="62" y="252" class="det">fee per course, instalments, what is included</text>
+      <text x="448" y="264" class="mono" text-anchor="end">from code</text>
+
+      <rect x="46" y="284" width="418" height="66" rx="7" fill="var(--client-bg)" stroke="var(--client)" stroke-width="1.5"/>
+      <text x="62" y="308" class="svc">/faculty</text>
+      <text x="62" y="328" class="det">name, subject, qualification, experience</text>
+      <text x="448" y="340" class="mono" text-anchor="end">from code</text>
+
+      <rect x="46" y="360" width="418" height="66" rx="7" fill="var(--box)" stroke="var(--client)" stroke-width="1.7"/>
+      <text x="62" y="384" class="svc">/updates</text>
+      <text x="62" y="404" class="det">notices, test schedules, holiday announcements</text>
+      <text x="448" y="416" class="mono" text-anchor="end">GET /api/updates</text>
+
+      <rect x="46" y="436" width="418" height="66" rx="7" fill="var(--box)" stroke="var(--client)" stroke-width="1.7"/>
+      <text x="62" y="460" class="svc">/contact</text>
+      <text x="62" y="480" class="det">enquiry form, map, tap-to-call, WhatsApp</text>
+      <text x="448" y="492" class="mono" text-anchor="end">POST /api/enquiry</text>
+
+      <text x="520" y="26" class="tier" fill="var(--sec)">ADMIN ROUTES · dynamic, login required</text>
+      <rect class="bnd" x="520" y="38" width="450" height="322" rx="10"/>
+
+      <rect x="536" y="56" width="418" height="66" rx="7" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.5"/>
+      <text x="552" y="80" class="svc">/admin/login</text>
+      <text x="552" y="100" class="det">password form, sets the session cookie</text>
+      <text x="938" y="112" class="mono" text-anchor="end">POST /api/auth/login</text>
+
+      <rect x="536" y="132" width="418" height="66" rx="7" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.5"/>
+      <text x="552" y="156" class="svc">/admin</text>
+      <text x="552" y="176" class="det">dashboard — list of existing updates</text>
+      <text x="938" y="188" class="mono" text-anchor="end">GET /api/updates</text>
+
+      <rect x="536" y="208" width="418" height="66" rx="7" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.5"/>
+      <text x="552" y="232" class="svc">/admin/updates/new</text>
+      <text x="552" y="252" class="det">title, body, optional image or PDF</text>
+      <text x="938" y="264" class="mono" text-anchor="end">POST /api/upload → /api/updates</text>
+
+      <rect x="536" y="284" width="418" height="66" rx="7" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.5"/>
+      <text x="552" y="308" class="svc">/admin/enquiries</text>
+      <text x="552" y="328" class="det">inbox with status: new · contacted · closed</text>
+      <text x="938" y="340" class="mono" text-anchor="end">GET · PATCH /api/enquiries</text>
+
+      <rect x="520" y="396" width="450" height="116" rx="8" fill="var(--tint)" stroke="var(--box-br)" stroke-width="1.4"/>
+      <text x="540" y="422" class="comp">Fixed content — content/*.ts</text>
+      <text x="540" y="444" class="det">batches.ts · fees.ts · faculty.ts</text>
+      <text x="540" y="464" class="det">Version-controlled. Read at build time by /courses,</text>
+      <text x="540" y="482" class="det">/fees and /faculty. Changed by redeploy, not by the</text>
+      <text x="540" y="500" class="det">owner — which removes three admin screens.</text>
+
+      <path class="flow" d="M520 452 L 490 452 L 490 246 L 464 246" marker-end="url(#a2)"/>
+      <path class="flow" d="M490 320 L 464 320" marker-end="url(#a2)"/>
+      <path class="flow" d="M490 170 L 464 170" marker-end="url(#a2)"/>
+      <text x="496" y="368" class="conn">build-time import</text>
+    </svg>
+    </div>
+    <p class="cap">Figure 2 — Routes, rendering mode, and the call each route makes.</p>
+
+    <h3>Rendering strategy</h3>
+    <table>
+      <tr><th>Route</th><th>Mode</th><th>Why</th></tr>
+      <tr><td>Home, Courses, Fees, Faculty</td><td>Static</td><td>Content changes only on redeploy; served from CDN</td></tr>
+      <tr><td>Updates</td><td>Static + 60s revalidate</td><td>New posts must appear without a rebuild</td></tr>
+      <tr><td>Contact</td><td>Static shell, client form</td><td>Page is fixed; only the form is interactive</td></tr>
+      <tr><td>All <code>/admin/*</code></td><td>Dynamic, uncached</td><td>Private data must never be cached</td></tr>
+    </table>
+
+    <div class="note">
+      <strong>No global state library.</strong> Server components fetch their own data and the two
+      forms hold local state. Adding Redux or similar here would be overhead with no benefit.
+    </div>
+  </section>
+
+  <!-- ===================== 3. BACKEND ===================== -->
+  <section id="backend">
+    <span class="secnum">Diagram 3</span>
+    <h2>Backend Layer</h2>
+    <p class="lead">
+      Four services, all running as Vercel serverless functions inside the same project — there is
+      no separate API server to deploy or pay for. Every request passes through the same five-stage
+      pipeline, in this order.
+    </p>
+
+    <div class="figure">
+    <svg viewBox="0 0 1000 520" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Backend layer: a five-stage request pipeline on the left and the four services on the right.">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/>
+        </marker>
+      </defs>
+
+      <text x="30" y="26" class="tier" fill="var(--app)">REQUEST PIPELINE · same order every time</text>
+
+      <rect x="30" y="42" width="400" height="58" rx="7" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.6"/>
+      <text x="48" y="65" class="svc">1 · Authenticate</text>
+      <text x="48" y="85" class="det">admin route? verify the session cookie, else 401</text>
+
+      <rect x="30" y="118" width="400" height="58" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.4"/>
+      <text x="48" y="141" class="svc">2 · Rate limit</text>
+      <text x="48" y="161" class="det">per IP on /api/enquiry and /api/auth/login, else 429</text>
+
+      <rect x="30" y="194" width="400" height="58" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.4"/>
+      <text x="48" y="217" class="svc">3 · Validate</text>
+      <text x="48" y="237" class="det">Zod schema + honeypot field, else 400</text>
+
+      <rect x="30" y="270" width="400" height="58" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.4"/>
+      <text x="48" y="293" class="svc">4 · Execute</text>
+      <text x="48" y="313" class="det">call the data access module — read, write or upload</text>
+
+      <rect x="30" y="346" width="400" height="58" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.4"/>
+      <text x="48" y="369" class="svc">5 · Notify, then respond</text>
+      <text x="48" y="389" class="det">email is isolated — its failure does not fail the request</text>
+
+      <path class="flow" d="M230 100 L 230 118" marker-end="url(#a3)"/>
+      <path class="flow" d="M230 176 L 230 194" marker-end="url(#a3)"/>
+      <path class="flow" d="M230 252 L 230 270" marker-end="url(#a3)"/>
+      <path class="flow" d="M230 328 L 230 346" marker-end="url(#a3)"/>
+
+      <rect x="30" y="428" width="400" height="66" rx="7" fill="var(--tint)" stroke="var(--box-br)" stroke-width="1.3"/>
+      <text x="48" y="452" class="svc">Uniform response envelope</text>
+      <text x="48" y="474" class="mono">{ ok: true, data }   ·   { ok: false, error }</text>
+
+      <text x="520" y="26" class="tier" fill="var(--app)">SERVICES · Next.js route handlers</text>
+
+      <rect x="520" y="42" width="450" height="96" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.5"/>
+      <text x="540" y="66" class="comp">Enquiry service</text>
+      <text x="540" y="86" class="mono">POST /api/enquiry</text>
+      <text x="540" y="106" class="det">public · validates the 10-digit phone, stores the row,</text>
+      <text x="540" y="124" class="det">then asks Resend to email the owner</text>
+
+      <rect x="520" y="154" width="450" height="96" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.5"/>
+      <text x="540" y="178" class="comp">Update service</text>
+      <text x="540" y="198" class="mono">GET · POST · PATCH · DELETE /api/updates</text>
+      <text x="540" y="218" class="det">GET is public; writes require the session cookie.</text>
+      <text x="540" y="236" class="det">Delete is soft — the row is unpublished, not removed</text>
+
+      <rect x="520" y="266" width="450" height="96" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.5"/>
+      <text x="540" y="290" class="comp">Upload service</text>
+      <text x="540" y="310" class="mono">POST /api/upload</text>
+      <text x="540" y="330" class="det">admin only · max 5 MB, jpg/png/webp/pdf, renamed to</text>
+      <text x="540" y="348" class="det">a UUID — the original filename is never trusted</text>
+
+      <rect x="520" y="378" width="450" height="116" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.5"/>
+      <text x="540" y="402" class="comp">Auth service</text>
+      <text x="540" y="422" class="mono">POST /api/auth/login   ·   POST /api/auth/logout</text>
+      <text x="540" y="442" class="det">verifies the password against a bcrypt hash and issues</text>
+      <text x="540" y="460" class="det">a signed cookie: httpOnly, secure, sameSite lax, 7 days</text>
+      <text x="540" y="482" class="det">Middleware guards pages; each route also checks itself</text>
+    </svg>
+    </div>
+    <p class="cap">Figure 3 — Request pipeline and service responsibilities.</p>
+
+    <h3>Endpoints</h3>
+    <table>
+      <tr><th>Method</th><th>Route</th><th>Auth</th><th>Does</th></tr>
+      <tr><td>POST</td><td><code>/api/enquiry</code></td><td>public</td><td>Validate, persist, email the owner</td></tr>
+      <tr><td>GET</td><td><code>/api/updates</code></td><td>public</td><td>Published updates, newest first</td></tr>
+      <tr><td>POST</td><td><code>/api/updates</code></td><td>admin</td><td>Create an update</td></tr>
+      <tr><td>PATCH</td><td><code>/api/updates/:id</code></td><td>admin</td><td>Edit an update</td></tr>
+      <tr><td>DELETE</td><td><code>/api/updates/:id</code></td><td>admin</td><td>Unpublish an update</td></tr>
+      <tr><td>POST</td><td><code>/api/upload</code></td><td>admin</td><td>Store a file, return its URL</td></tr>
+      <tr><td>GET</td><td><code>/api/enquiries</code></td><td>admin</td><td>List enquiries</td></tr>
+      <tr><td>PATCH</td><td><code>/api/enquiries/:id</code></td><td>admin</td><td>Change status</td></tr>
+      <tr><td>POST</td><td><code>/api/auth/login</code></td><td>public</td><td>Verify password, set cookie</td></tr>
+      <tr><td>POST</td><td><code>/api/auth/logout</code></td><td>admin</td><td>Clear cookie</td></tr>
+    </table>
+
+    <h3>Contract — <code>POST /api/enquiry</code></h3>
+    <pre><code>// request
+{ "name": "Rajwinder Kaur",
+  "phone": "98765 43210",
+  "student_class": "11",
+  "message": "Is the evening physics batch open?",
+  "website": ""              // honeypot — must be empty
+}
+
+// 200
+{ "ok": true, "data": { "id": "6f1c…", "created_at": "2026-04-12T09:14:22Z" } }
+
+// 400 / 429
+{ "ok": false, "error": { "code": "INVALID_PHONE", "message": "Enter a 10-digit mobile number" } }</code></pre>
+
+    <h3>Validation rules</h3>
+    <pre><code>const EnquirySchema = z.object({
+  name:          z.string().min(2).max(60),
+  phone:         z.string().regex(/^[6-9]\d{9}$/),   // Indian mobile
+  student_class: z.enum(['9','10','11','12','other']),
+  message:       z.string().max(500).optional(),
+  website:       z.string().max(0),                  // bots fill this
+});
+
+const UpdateSchema = z.object({
+  title:     z.string().min(3).max(120),
+  body:      z.string().min(1).max(4000),
+  image_url: z.string().url().optional(),
+  file_url:  z.string().url().optional(),
+});</code></pre>
+
+    <h3>Status codes</h3>
+    <table>
+      <tr><th>Code</th><th>When</th><th>Returned by</th></tr>
+      <tr><td><code>200</code></td><td>Success</td><td>All routes</td></tr>
+      <tr><td><code>400</code></td><td>Schema validation failed, or honeypot filled</td><td>Enquiry, Update, Upload</td></tr>
+      <tr><td><code>401</code></td><td>Missing or invalid session cookie</td><td>All admin routes</td></tr>
+      <tr><td><code>413</code></td><td>File over 5 MB or a disallowed type</td><td>Upload</td></tr>
+      <tr><td><code>429</code></td><td>Rate limit exceeded for this IP</td><td>Enquiry, Login</td></tr>
+      <tr><td><code>500</code></td><td>Database unreachable</td><td>All routes</td></tr>
+    </table>
+
+    <div class="note">
+      <strong>Why stage 5 is separated.</strong> Email delivery is the least reliable step in the
+      system. If Resend is unreachable the enquiry row already exists, so the parent still sees
+      success and the owner finds the enquiry in the admin inbox. Storing and notifying are two
+      different guarantees.
+    </div>
+  </section>
+
+  <!-- ===================== 4. DATABASE ===================== -->
+  <section id="database">
+    <span class="secnum">Diagram 4</span>
+    <h2>Database Layer</h2>
+    <p class="lead">
+      Two tables and one bucket. There is deliberately no relationship between the tables — they
+      serve two unrelated flows. Batches, fees and faculty are not stored here at all, because the
+      owner does not edit them.
+    </p>
+
+    <div class="figure">
+    <svg viewBox="0 0 1000 490" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Database layer: the updates and enquiries tables, the object storage bucket, and content kept in code.">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/>
+        </marker>
+      </defs>
+
+      <text x="30" y="26" class="tier" fill="var(--data)">POSTGRESQL · Supabase managed, ap-south-1</text>
+
+      <rect x="30" y="40" width="300" height="270" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.7"/>
+      <text x="50" y="66" class="comp">updates</text>
+      <text x="50" y="92" class="mono">id            uuid  PK</text>
+      <text x="50" y="114" class="mono">title         text</text>
+      <text x="50" y="136" class="mono">body          text</text>
+      <text x="50" y="158" class="mono">image_url     text  null</text>
+      <text x="50" y="180" class="mono">file_url      text  null</text>
+      <text x="50" y="202" class="mono">is_published  bool  true</text>
+      <text x="50" y="224" class="mono">created_at    timestamptz</text>
+      <text x="50" y="246" class="mono">updated_at    timestamptz</text>
+      <text x="50" y="278" class="det">index on created_at desc</text>
+      <text x="50" y="296" class="det">where is_published = true</text>
+
+      <rect x="356" y="40" width="300" height="270" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.7"/>
+      <text x="376" y="66" class="comp">enquiries</text>
+      <text x="376" y="92" class="mono">id             uuid  PK</text>
+      <text x="376" y="114" class="mono">name           text</text>
+      <text x="376" y="136" class="mono">phone          text</text>
+      <text x="376" y="158" class="mono">student_class  text</text>
+      <text x="376" y="180" class="mono">message        text  null</text>
+      <text x="376" y="202" class="mono">status         text  'new'</text>
+      <text x="376" y="224" class="mono">created_at     timestamptz</text>
+      <text x="376" y="256" class="det">status is constrained to</text>
+      <text x="376" y="274" class="det">new · contacted · closed</text>
+      <text x="376" y="296" class="det">index on (status, created_at)</text>
+
+      <text x="700" y="26" class="tier" fill="var(--data)">OBJECT STORAGE</text>
+      <rect x="700" y="40" width="270" height="150" rx="8" fill="var(--box)" stroke="var(--data)" stroke-width="1.7"/>
+      <text x="720" y="66" class="comp">bucket: update-files</text>
+      <text x="720" y="90" class="mono">updates/{uuid}.jpg</text>
+      <text x="720" y="112" class="mono">updates/{uuid}.pdf</text>
+      <text x="720" y="140" class="det">public-read — these are notices</text>
+      <text x="720" y="158" class="det">meant for parents. Nothing</text>
+      <text x="720" y="176" class="det">private is ever stored here.</text>
+
+      <path class="flow" d="M330 250 L 343 250 L 343 332 L 982 332 L 982 115 L 972 115" marker-end="url(#a4)" stroke-dasharray="5 4"/>
+      <text x="380" y="324" class="conn">image_url and file_url hold the URL, never the file itself</text>
+
+      <rect x="700" y="222" width="270" height="88" rx="8" fill="var(--tint)" stroke="var(--box-br)" stroke-width="1.4"/>
+      <text x="720" y="248" class="comp">Not in the database</text>
+      <text x="720" y="270" class="det">batches · fees · faculty · page copy</text>
+      <text x="720" y="290" class="det">live in content/*.ts, in the repo</text>
+
+      <rect x="30" y="358" width="940" height="106" rx="8" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.6"/>
+      <text x="50" y="384" class="comp">Access control</text>
+      <text x="50" y="406" class="det">Row Level Security is enabled on both tables with no policies written. That blocks the public</text>
+      <text x="50" y="426" class="det">anonymous key entirely, so every read and write must pass through the data access module using</text>
+      <text x="50" y="446" class="det">the service key — which exists only as a server-side environment variable.</text>
+    </svg>
+    </div>
+    <p class="cap">Figure 4 — Tables, bucket, and where the rest of the content lives.</p>
+
+    <h3>Schema — DDL</h3>
+    <pre><code>create table updates (
+  id            uuid primary key default gen_random_uuid(),
+  title         text not null,
+  body          text not null,
+  image_url     text,
+  file_url      text,
+  is_published  boolean not null default true,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+create index updates_public_idx
+  on updates (created_at desc)
+  where is_published = true;
+
+create table enquiries (
+  id            uuid primary key default gen_random_uuid(),
+  name          text not null,
+  phone         text not null,
+  student_class text not null,
+  message       text,
+  status        text not null default 'new'
+                  check (status in ('new','contacted','closed')),
+  created_at    timestamptz not null default now()
+);
+
+create index enquiries_status_idx on enquiries (status, created_at desc);
+
+-- block the public anonymous key entirely; all access goes
+-- through the data access module using the service key
+alter table updates   enable row level security;
+alter table enquiries enable row level security;</code></pre>
+
+    <h3>Which service touches which table</h3>
+    <table>
+      <tr><th>Table</th><th>Written by</th><th>Read by</th><th>Growth</th></tr>
+      <tr><td><code>updates</code></td><td>Update service, admin only</td><td>Public <code>/updates</code> page</td><td>A few rows a month</td></tr>
+      <tr><td><code>enquiries</code></td><td>Enquiry service, public</td><td>Admin inbox only</td><td>10–20 rows a week in season</td></tr>
+      <tr><td><code>update-files</code></td><td>Upload service, admin only</td><td>Parent browsers, via CDN</td><td>Bounded by the free 1 GB</td></tr>
+    </table>
+
+    <div class="note">
+      <strong>Operational note.</strong> The Supabase free tier pauses a project after a week of
+      inactivity. Open the dashboard once before any demo to wake it, and keep a CSV export of
+      <code>enquiries</code> as a backup.
+    </div>
+  </section>
+
+  <!-- ===================== 5. DEPLOYMENT ===================== -->
+  <section id="deployment">
+    <span class="secnum">Diagram 5</span>
+    <h2>Deployment Layer</h2>
+    <p class="lead">
+      One repository, one deploy. Pushing to a branch produces a preview URL; merging to
+      <code>main</code> promotes it to production. Rollback is a single action, which matters the
+      night before a submission.
+    </p>
+
+    <div class="figure">
+    <svg viewBox="0 0 1000 440" xmlns="http://www.w3.org/2000/svg" role="img"
+         aria-label="Deployment layer: local machine to GitHub to Vercel, with Supabase and Resend as runtime dependencies.">
+      <defs>
+        <marker id="a5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+          <path d="M0 0 L10 5 L0 10 z" fill="var(--line)"/>
+        </marker>
+      </defs>
+
+      <rect x="30" y="60" width="180" height="80" rx="8" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.5"/>
+      <text x="48" y="86" class="comp">Local machine</text>
+      <text x="48" y="106" class="mono">npm run dev</text>
+      <text x="48" y="126" class="det">localhost:3000</text>
+
+      <rect x="30" y="196" width="180" height="80" rx="8" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.5"/>
+      <text x="48" y="222" class="comp">GitHub</text>
+      <text x="48" y="242" class="det">source of truth</text>
+      <text x="48" y="262" class="det">triggers every build</text>
+
+      <text x="270" y="40" class="tier" fill="var(--app)">VERCEL · Hobby plan, free</text>
+      <rect class="bnd" x="270" y="52" width="380" height="330" rx="10"/>
+
+      <rect x="290" y="72" width="340" height="68" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.5"/>
+      <text x="308" y="96" class="comp">Build</text>
+      <text x="308" y="118" class="det">next build — static pages generated here</text>
+
+      <rect x="290" y="166" width="340" height="68" rx="7" fill="var(--box)" stroke="var(--box-br)" stroke-width="1.4"/>
+      <text x="308" y="190" class="comp">Preview deployment</text>
+      <text x="308" y="212" class="det">every non-main branch, its own URL</text>
+
+      <rect x="290" y="258" width="340" height="68" rx="7" fill="var(--app-bg)" stroke="var(--app)" stroke-width="1.7"/>
+      <text x="308" y="282" class="comp">Production</text>
+      <text x="308" y="304" class="mono">aroraclasses.vercel.app</text>
+
+      <path class="flow" d="M120 140 L 120 196" marker-end="url(#a5)"/>
+      <text x="128" y="172" class="conn">git push</text>
+      <path class="flow" d="M210 226 L 250 226 L 250 106 L 290 106" marker-end="url(#a5)"/>
+      <text x="214" y="218" class="conn">webhook</text>
+      <path class="flow" d="M460 140 L 460 166" marker-end="url(#a5)"/>
+      <path class="flow" d="M460 234 L 460 258" marker-end="url(#a5)"/>
+      <text x="468" y="250" class="conn">merge to main</text>
+
+      <text x="700" y="40" class="tier" fill="var(--data)">RUNTIME DEPENDENCIES</text>
+      <rect x="700" y="72" width="270" height="86" rx="8" fill="var(--data-bg)" stroke="var(--data)" stroke-width="1.6"/>
+      <text x="720" y="98" class="comp">Supabase</text>
+      <text x="720" y="118" class="det">Postgres + Storage</text>
+      <text x="720" y="138" class="det">region ap-south-1, Mumbai</text>
+
+      <rect x="700" y="186" width="270" height="86" rx="8" fill="var(--ext-bg)" stroke="var(--ext)" stroke-width="1.6"/>
+      <text x="720" y="212" class="comp">Resend</text>
+      <text x="720" y="232" class="det">3,000 emails a month, free</text>
+      <text x="720" y="252" class="det">verify delivery in its dashboard</text>
+
+      <path class="flow" d="M630 292 L 665 292 L 665 115 L 700 115" marker-end="url(#a5)"/>
+      <path class="flow" d="M630 300 L 678 300 L 678 229 L 700 229" marker-end="url(#a5)"/>
+      <text x="636" y="322" class="conn">server-side only</text>
+
+      <rect x="700" y="300" width="270" height="82" rx="8" fill="var(--sec-bg)" stroke="var(--sec)" stroke-width="1.5"/>
+      <text x="720" y="326" class="comp">Environment variables</text>
+      <text x="720" y="346" class="det">SUPABASE_SERVICE_KEY · RESEND_API_KEY</text>
+      <text x="720" y="364" class="det">SESSION_SECRET · OWNER_EMAIL</text>
+
+      <text x="30" y="412" class="det">Only variables prefixed NEXT_PUBLIC_ reach the browser. That prefix is the entire boundary between safe and leaked.</text>
+    </svg>
+    </div>
+    <p class="cap">Figure 5 — Where each part physically runs, and where secrets live.</p>
+
+    <h3>Where everything runs</h3>
+    <table>
+      <tr><th>Concern</th><th>Provider</th><th>Plan</th><th>Region</th></tr>
+      <tr><td>Hosting, CDN, serverless functions</td><td>Vercel</td><td>Hobby, free</td><td>ap-south-1</td></tr>
+      <tr><td>Database and object storage</td><td>Supabase</td><td>Free</td><td>ap-south-1, Mumbai</td></tr>
+      <tr><td>Transactional email</td><td>Resend</td><td>Free, 3,000/month</td><td>—</td></tr>
+      <tr><td>Source control and CI trigger</td><td>GitHub</td><td>Free</td><td>—</td></tr>
+    </table>
+
+    <div class="note">
+      <strong>Why Mumbai.</strong> Co-locating the functions and the database in ap-south-1 removes
+      a round trip across continents. Parents in Ludhiana on mobile data feel that difference.
+    </div>
+  </section>
+
+  <!-- ===================== 6. DECISIONS ===================== -->
+  <section id="decisions">
+    <span class="secnum">Section 6</span>
+    <h2>Key Decisions</h2>
+    <p class="lead">Each row is a choice that could reasonably have gone the other way.</p>
+    <table>
+      <tr><th>Decision</th><th>Rationale</th><th>Trade-off accepted</th></tr>
+      <tr><td>Monolith, not separate frontend and backend</td><td>One deploy, no CORS, no second host</td><td>Frontend and backend scale together</td></tr>
+      <tr><td>Serverless functions, not a persistent server</td><td>Zero cost at this traffic, no administration</td><td>Cold starts on the first request</td></tr>
+      <tr><td>Batches and fees in code, not in the database</td><td>Owner only needs to edit updates; removes three tables and three admin screens</td><td>A fee change needs a redeploy</td></tr>
+      <tr><td>Enquiries stored <em>and</em> emailed</td><td>Email delivery is unreliable; the row is the source of truth</td><td>Two places to check</td></tr>
+      <tr><td>Files in object storage, not in Postgres</td><td>Databases handle binaries poorly; CDN serves them better</td><td>Two systems to keep consistent</td></tr>
+      <tr><td>RLS enabled with no policies</td><td>Stricter and simpler than writing row rules for a single admin</td><td>All access must go through the server</td></tr>
+      <tr><td>Email notification, not WhatsApp API</td><td>Works on day one without business-number approval</td><td>Owner checks email less often than WhatsApp</td></tr>
+    </table>
+  </section>
+
+  <!-- ===================== 7. ROADMAP ===================== -->
+  <section id="roadmap">
+    <span class="secnum">Section 7</span>
+    <h2>Roadmap</h2>
+    <p class="lead">
+      Five phases. Each one leaves the system deployable and useful — stopping at phase three
+      still yields a working product rather than a broken one.
+    </p>
+    <table>
+      <tr><th>Phase</th><th>Scope</th><th>Value delivered</th></tr>
+      <tr><td>1</td><td>Static site with all fixed content</td><td>Parents can find timings and fees without calling</td></tr>
+      <tr><td>2</td><td>Enquiry form: validation, persistence, email</td><td>Missed calls become captured enquiries</td></tr>
+      <tr><td>3</td><td>Login and text-only updates</td><td>Owner publishes notices himself</td></tr>
+      <tr><td>4</td><td>Image and PDF attachments on updates</td><td>Test schedules and notices shared as files</td></tr>
+      <tr><td>5</td><td>Admin enquiry inbox with status</td><td>No enquiry is followed up twice or forgotten</td></tr>
+    </table>
+
+    <h3>How success is measured</h3>
+    <ul class="plain">
+      <li><strong>Baseline, before launch:</strong> ask the owner roughly how many enquiry calls arrive daily and how many are missed during class hours.</li>
+      <li><strong>After two weeks live:</strong> count enquiries received through the form.</li>
+      <li>Even "six enquiries in two weeks that would previously have been missed calls" is a real result — and measuring it is what separates a project from a demo.</li>
+    </ul>
+  </section>
+
+  <footer>
+    Architecture document for Arora Classes, Kitchlu Nagar, Ludhiana ·
+    Diagrams are vector and scale without loss · Print-ready PDF included in this repository.
+  </footer>
+
+</div>
+</body>
+</html>
